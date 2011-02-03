@@ -65,6 +65,7 @@ SET(
 	RecursiveVerifier.h
 	Rrt.h
 	RrtCon.h
+	RrtMod.h
 	RrtConCon.h
 	RrtDual.h
 	RrtExtCon.h
@@ -98,6 +99,7 @@ SET(
 	RecursiveVerifier.cpp
 	Rrt.cpp
 	RrtCon.cpp
+	RrtMod.cpp
 	RrtConCon.cpp
 	RrtDual.cpp
 	RrtExtCon.cpp

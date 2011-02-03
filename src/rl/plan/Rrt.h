@@ -88,6 +88,10 @@ namespace rl
 				VectorPtr q;
 				
 				::rl::math::Real radius;
+
+				unsigned int uses;
+
+				unsigned int fails;
 			};
 			
 			struct TreeBundle;

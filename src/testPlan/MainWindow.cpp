@@ -55,6 +55,7 @@
 #include <rl/plan/RecursiveVerifier.h>
 #include <rl/plan/Rrt.h>
 #include <rl/plan/RrtCon.h>
+#include <rl/plan/RrtMod.h>
 #include <rl/plan/RrtConCon.h>
 #include <rl/plan/RrtDual.h>
 #include <rl/plan/RrtExtCon.h>
@@ -765,7 +766,7 @@ MainWindow::load(const QString& fileName)
 		this->optimizer->verifier = this->verifier2.get();
 	}
 	
-	rl::xml::Object planner = path.eval("//addRrtConCon|//prm|//rrt|//rrtCon|//rrtConCon|//rrtConExt|//rrtDual|//rrtGoalBias|//rrtExtCon|//rrtExtExt");
+	rl::xml::Object planner = path.eval("//addRrtConCon|//prm|//rrt|//rrtCon|//rrtMod|//rrtConCon|//rrtConExt|//rrtDual|//rrtGoalBias|//rrtExtCon|//rrtExtExt");
 	
 	if ("addRrtConCon" == planner.getNodeTab(0).getName())
 	{
@@ -848,6 +849,29 @@ MainWindow::load(const QString& fileName)
 		if (path.eval("count(seed) > 0", planner.getNodeTab(0)).getBoolval())
 		{
 			rrtCon->seed(
+				static_cast< boost::mt19937::result_type >(path.eval("number(seed)", planner.getNodeTab(0)).getFloatval(rl::util::Timer::now() * 1000000.0f))
+			);
+		}
+	}
+	else if ("rrtMod" == planner.getNodeTab(0).getName())
+	{
+		this->planner.reset(new rl::plan::RrtMod());
+		rl::plan::RrtMod* rrtMod = static_cast< rl::plan::RrtMod* >(this->planner.get());
+		rrtMod->delta = path.eval("number(delta)", planner.getNodeTab(0)).getFloatval(1.0f);
+		
+		if ("deg" == path.eval("string(delta/@unit)", planner.getNodeTab(0)).getStringval())
+		{
+			rrtMod->delta *= rl::math::DEG2RAD;
+		}
+		
+		rrtMod->epsilon = this->epsilon.get();
+		rrtMod->kd = path.eval("count(bruteForce) > 0", planner.getNodeTab(0)).getBoolval() ? false : true;
+		rrtMod->probability = path.eval("number(probability)", planner.getNodeTab(0)).getFloatval(0.05f);
+		rrtMod->sampler = this->sampler.get();
+		
+		if (path.eval("count(seed) > 0", planner.getNodeTab(0)).getBoolval())
+		{
+			rrtMod->seed(
 				static_cast< boost::mt19937::result_type >(path.eval("number(seed)", planner.getNodeTab(0)).getFloatval(rl::util::Timer::now() * 1000000.0f))
 			);
 		}
@@ -1073,8 +1097,8 @@ MainWindow::load(const QString& fileName)
 	
 	this->viewer->drawConfiguration(*this->start);
 	
-	this->configurationModel->invalidate();
-	
+	this->configurationModel->invalidate();	
+
 	if (path.eval("count(//viewer/wait) < 1").getBoolval())
 	{
 		this->startThread();

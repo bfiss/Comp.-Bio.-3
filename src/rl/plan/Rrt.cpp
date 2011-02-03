@@ -109,6 +109,8 @@ namespace rl
 			tree[v].index = ::boost::num_vertices(tree) - 1;
 			tree[v].q = q;
 			tree[v].radius = ::std::numeric_limits< ::rl::math::Real >::max();
+			tree[v].uses = 0;
+			tree[v].fails = 0;
 			
 			if (this->kd)
 			{
@@ -153,6 +155,8 @@ namespace rl
 			::rl::math::Real step = distance;
 			
 			bool reached = false;
+
+			//std::cout << "hier sind wir:" << delta << std::endl;
 			
 			if (step <= this->delta)
 			{
@@ -287,11 +291,21 @@ namespace rl
 			
 			path.push_front(*this->tree[0][i].q);
 		}
-		
+
+#define SLICE 5		
+
 		Rrt::Neighbor
 		Rrt::nearest(const Tree& tree, const ::rl::math::Vector& chosen)
 		{
 			Neighbor p(NULL, ::std::numeric_limits< ::rl::math::Real >::max());
+			Neighbor tmp(NULL, ::std::numeric_limits< ::rl::math::Real >::max());
+			Neighbor q[SLICE];
+
+
+			for( int i = 0 ; i < SLICE ; ++i ) {
+				q[i].first = NULL;
+				q[i].second = ::std::numeric_limits< ::rl::math::Real >::max();
+			}
 			
 			if (this->kd)
 			{
@@ -309,14 +323,34 @@ namespace rl
 							true,
 							Distance(this->model)
 						);
-						
-						if (search.begin()->second < p.second)
-						{
-							p.first = search.begin()->first.second;
-							p.second = search.begin()->second;
+
+						p.first = search.begin()->first.second;
+						p.second = search.begin()->second;					
+
+						for( int i = 0 ; i < SLICE ; ++i ) {
+							if (p.second < q[i].second)
+							{
+								tmp.first = q[i].first;
+								tmp.second = q[i].second;
+								q[i].first = p.first;
+								q[i].second = p.second;
+								p.first = tmp.first;
+								p.second = tmp.second;
+							}
 						}
 					}
 				}
+
+				for( int i = 1 ; i < SLICE ; ++i ) {
+					if(q[i].first)
+					if(tree[q[i].first].uses < tree[q[0].first].uses) {
+						q[0].first = q[i].first;
+						q[0].second = q[i].second;
+					}
+				}
+				p.first = q[0].first;
+				p.second = q[0].second;
+
 			}
 			else
 			{
